@@ -20,6 +20,7 @@ app.mount("/assets",StaticFiles(directory=str(WEB_DIR)),name="assets")
 class ScanRequest(BaseModel):
     symbols:list[str]=Field(min_length=1,max_length=25)
     logic:Literal["AND","OR"]="AND"
+    timeframe:Literal["1min","5min","15min","30min","45min","1h","2h","4h","1day","1week","1month"]="1day"
     rules:list[dict[str,Any]]=Field(default_factory=list,max_length=30)
     groups:list[dict[str,Any]]=Field(default_factory=list,max_length=20)
     @field_validator("symbols")
@@ -34,7 +35,7 @@ class ScanRequest(BaseModel):
         if not out:raise ValueError("Enter at least one ticker")
         return out
     def scan_definition(self):
-        return {"logic":self.logic,"rules":self.rules,"groups":self.groups}
+        return {"logic":self.logic,"timeframe":self.timeframe,"rules":self.rules,"groups":self.groups}
 
 class SaveScan(BaseModel):
     name:str=Field(min_length=1,max_length=100)
@@ -55,7 +56,7 @@ def index():return FileResponse(WEB_DIR/"index.html")
 @app.get("/api/health")
 def health():
     key=os.getenv("TWELVE_DATA_API_KEY","").strip()
-    return {"status":"ok","api_key_configured":bool(key and key not in {"replace_me","YOUR_API_KEY"}),"provider":"Twelve Data","database":"sqlite","features":{"technical_indicators":True,"nested_groups":True,"historical_offsets":True,"count_rules":True,"saved_scans":True,"backtest_api":True,"intraday":False,"live_alerts":False}}
+    return {"status":"ok","api_key_configured":bool(key and key not in {"replace_me","YOUR_API_KEY"}),"provider":"Twelve Data","database":"sqlite","features":{"technical_indicators":True,"nested_groups":True,"historical_offsets":True,"count_rules":True,"saved_scans":True,"backtest_api":True,"intraday":True,"live_alerts":False}}
 
 @app.get("/api/indicators")
 def indicators():
@@ -69,7 +70,7 @@ def scan(request:ScanRequest):
     results=[];errors=[]
     for symbol in request.symbols:
         try:
-            frame=get_daily_prices(symbol,outputsize=220)
+            frame=get_daily_prices(symbol,outputsize=220,interval=request.timeframe)
             matches=evaluate_scan(frame,definition)
             if bool(matches.iloc[-1]):
                 results.append({"symbol":symbol,**latest_metrics(frame)})
@@ -124,4 +125,4 @@ def backtest(request:ScanRequest):
                     bars.append({"date":str(frame.index[idx].date()),"close":float(frame["close"].iloc[idx])})
             output.append({"symbol":symbol,"signals":bars,"signal_count":len(bars)})
         except Exception as exc:errors.append({"symbol":symbol,"message":str(exc)[:180]})
-    return {"timeframe":"daily","results":output,"errors":errors,"note":"Historical signals use provider-returned daily bars. Intraday, split/dividend-adjusted fidelity and portfolio-grade execution simulation are not implemented."}
+    return {"timeframe":request.timeframe,"results":output,"errors":errors,"note":"Historical signals use provider-returned daily bars. Intraday, split/dividend-adjusted fidelity and portfolio-grade execution simulation are not implemented."}
