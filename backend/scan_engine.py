@@ -114,21 +114,22 @@ def evaluate_rule(frame: pd.DataFrame, rule: dict) -> pd.Series:
 def evaluate_scan(frame: pd.DataFrame, scan: dict) -> pd.Series:
     """Evaluate all/any rules, nested groups, and count rules on every bar."""
     def group(node):
-        if "rules" in node:
-            terms=[]
-            for rule in node["rules"]:
-                if "count" in rule:
-                    base=evaluate_rule(frame,rule)
-                    lookback=int(rule.get("lookback",10))
-                    if not 1<=lookback<=500: raise ValueError("Count lookback must be 1–500")
-                    term=base.astype(int).rolling(lookback,min_periods=lookback).sum() >= int(rule["count"])
-                else: term=evaluate_rule(frame,rule)
-                terms.append(term)
-        else:
-            terms=[group(child) for child in node.get("groups",[])]
+        terms=[]
+        for rule in node.get('rules',[]):
+            if 'count' in rule:
+                base=evaluate_rule(frame,rule)
+                lookback=int(rule.get('lookback',10))
+                if not 1<=lookback<=500: raise ValueError('Count lookback must be 1–500')
+                count=int(rule['count'])
+                if count<0 or count>lookback: raise ValueError('Count must be between zero and lookback')
+                term=base.astype(int).rolling(lookback,min_periods=lookback).sum() >= count
+            else: term=evaluate_rule(frame,rule)
+            terms.append(term)
+        terms.extend(group(child) for child in node.get('groups',[]))
         if not terms: return pd.Series(False,index=frame.index)
-        return (pd.concat(terms,axis=1).all(axis=1) if node.get("logic",scan.get("logic","AND"))=="AND"
-                else pd.concat(terms,axis=1).any(axis=1))
+        logic=node.get('logic',scan.get('logic','AND'))
+        if logic not in {'AND','OR'}: raise ValueError('Group logic must be AND or OR')
+        return pd.concat(terms,axis=1).all(axis=1) if logic=='AND' else pd.concat(terms,axis=1).any(axis=1)
     return group(scan)
 
 def latest_metrics(frame: pd.DataFrame) -> dict[str, Any]:
