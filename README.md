@@ -1,54 +1,33 @@
-# Chartink for US Stocks — Twelve Data Starter
+# Chartink for US Stocks
 
-This repository is currently a starter integration for Twelve Data. The original repository was empty when inspected, so this commit creates a safe, standalone data-provider foundation; it does not replace or claim to implement an existing scanner/dashboard.
+A Chartink-inspired technical scanner for US equities using Twelve Data daily OHLCV history. This is an original implementation and does not contain Chartink's proprietary code.
 
-## 1. Requirements
-- Python 3.10+
-- A Twelve Data API key and account with access to the requested symbol/endpoint
-- Git
+## Features
+- Browser-based scan builder with AND/OR condition logic.
+- Close, open, high, low, volume, SMA 20/50/200, RSI 14 and daily percentage change.
+- Numeric or indicator comparisons, including cross-above and cross-below.
+- Results table, per-ticker error reporting and CSV export.
+- API key read only from the server environment.
 
-## 2. Local setup (Windows PowerShell)
+## Run locally (Windows PowerShell)
 ```powershell
-git clone https://github.com/rahulrtk74747474-glitch/ChartinkforUSstocks.git
-cd ChartinkforUSstocks
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
 pip install -r requirements.txt
 Copy-Item .env.example .env
+# Edit .env and set TWELVE_DATA_API_KEY=your_real_key
+uvicorn backend.app:app --reload
 ```
-Edit `.env` locally and set `TWELVE_DATA_API_KEY=your_real_key`. Never commit `.env`.
+Open http://127.0.0.1:8000.
 
-## 3. Verify the connection
-```powershell
-python test_twelve_data.py
-```
-The test requests five daily bars for AAPL. This consumes API credits. A successful result prints dates and OHLCV data.
+## API
+- `GET /api/health` — configuration status; never returns the key.
+- `POST /api/scan` — runs a scan.
+- `GET /api/indicators` — supported indicator names.
 
-## 4. Use as a Python module
-```python
-from backend.providers.twelve_data import get_daily_prices
+Each ticker requests up to 220 daily bars to support SMA 200. A scan can use provider credits and take time; limit is 25 tickers per request. Check your Twelve Data plan and redistribution terms before public deployment. The application does not guarantee real-time prices.
 
-df = get_daily_prices("AAPL", outputsize=100)
-print(df.tail())
-```
-Returned rows are normalized to ascending time order with lowercase OHLCV column names where available.
+Never commit `.env`, API keys, or credentials. A configured key does not prove a successful provider request; run a scan to verify access.
 
-## 5. GitHub Actions secret (when adding a workflow)
-Repository → Settings → Secrets and variables → Actions → New repository secret.
-Name: `TWELVE_DATA_API_KEY`; value: your API key. Workflows can expose it to Python as:
-```yaml
-env:
-  TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
-```
-Do not put a key in workflow YAML, source code, logs, or commits.
-
-## Limits and data rights
-API credits, supported exchanges, intraday/real-time access, and symbol availability depend on your Twelve Data plan. Free access is not a promise of unlimited requests or permission to redistribute data publicly. Confirm your plan's terms before exposing price data on a public website.
-
-## Next integration steps
-1. Add the existing scanner source code and workflow(s) to this repository (or identify the correct active repository/branch).
-2. Add a market-specific symbol registry (ticker + exchange).
-3. Add caching and request-budget controls before scanning a large universe.
-4. Add formula implementations with tests and compare against known sample results.
-5. Add deployment only after the application and data-licensing requirements are clear.
+## Remaining work
+This is the first scanner layer. Saved scans, accounts, scheduled scans, alerts, intraday scans, a broad US ticker master, caching and production rate limiting are not implemented yet.
