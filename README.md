@@ -2,6 +2,8 @@
 
 A Chartink-inspired technical screener for US equities, using Twelve Data market history. It is an independent implementation, not Chartink source code or a claim of full feature parity.
 
+Full feature inventory and remaining work: [Chartink feature parity audit](docs/feature-parity.md).
+
 ## Current implementation
 - Rule engine: AND/OR groups, nested groups, historical bar offsets, indicator-vs-number or indicator-vs-indicator comparisons, crosses, and count-of-events over a lookback.
 - Indicators: OHLCV, SMA, EMA, WMA, RSI, MACD line/signal/histogram, Bollinger Bands, ATR, Stochastic %K/%D, OBV, VWAP, ROC, CCI, ADX and directional indicators.
