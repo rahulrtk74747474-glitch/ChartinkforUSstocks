@@ -29,6 +29,7 @@ def get_daily_prices(
     symbol: str,
     outputsize: int = 100,
     exchange: Optional[str] = None,
+    interval: str = "1day",
 ) -> pd.DataFrame:
     """Fetch daily OHLCV history and return a chronological DataFrame.
 
@@ -50,9 +51,13 @@ def get_daily_prices(
     if not isinstance(outputsize, int) or outputsize < 2:
         raise ValueError("outputsize must be an integer of at least 2.")
 
+    allowed_intervals = {"1min", "5min", "15min", "30min", "45min", "1h", "2h", "4h", "1day", "1week", "1month"}
+    if interval not in allowed_intervals:
+        raise ValueError(f"Unsupported interval: {interval}")
+
     params = {
         "symbol": symbol.strip(),
-        "interval": "1day",
+        "interval": interval,
         "outputsize": outputsize,
         "timezone": "Exchange",
     }
