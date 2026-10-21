@@ -1,15 +1,14 @@
 # Chartink for US Stocks
 
-A Chartink-inspired technical scanner for US equities using Twelve Data daily OHLCV history. This is an original implementation and does not contain Chartink's proprietary code.
+A Chartink-inspired technical screener for US equities, using Twelve Data market history. It is an independent implementation, not Chartink source code or a claim of full feature parity.
 
-## Features
-- Browser-based scan builder with AND/OR condition logic.
-- Close, open, high, low, volume, SMA 20/50/200, RSI 14 and daily percentage change.
-- Numeric or indicator comparisons, including cross-above and cross-below.
-- Results table, per-ticker error reporting and CSV export.
-- API key read only from the server environment.
+## Current implementation
+- Rule engine: AND/OR groups, nested groups, historical bar offsets, indicator-vs-number or indicator-vs-indicator comparisons, crosses, and count-of-events over a lookback.
+- Indicators: OHLCV, SMA, EMA, WMA, RSI, MACD line/signal/histogram, Bollinger Bands, ATR, Stochastic %K/%D, OBV, VWAP, ROC, CCI, ADX and directional indicators.
+- Web interface with scanner conditions, result table and CSV export.
+- FastAPI endpoints for health and scans; Twelve Data key remains server-side.
 
-## Run locally (Windows PowerShell)
+## Run locally (PowerShell)
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
@@ -21,13 +20,12 @@ uvicorn backend.app:app --reload
 Open http://127.0.0.1:8000.
 
 ## API
-- `GET /api/health` — configuration status; never returns the key.
-- `POST /api/scan` — runs a scan.
-- `GET /api/indicators` — supported indicator names.
+- `GET /api/health`
+- `GET /api/indicators`
+- `POST /api/scan`
 
-Each ticker requests up to 220 daily bars to support SMA 200. A scan can use provider credits and take time; limit is 25 tickers per request. Check your Twelve Data plan and redistribution terms before public deployment. The application does not guarantee real-time prices.
+## Important
+Twelve Data interval, historical depth, exchange coverage and request quotas depend on your subscription. Intraday and multi-timeframe scans require provider support and appropriate access. No API key is returned by the application. Never commit `.env`.
 
-Never commit `.env`, API keys, or credentials. A configured key does not prove a successful provider request; run a scan to verify access.
-
-## Remaining work
-This is the first scanner layer. Saved scans, accounts, scheduled scans, alerts, intraday scans, a broad US ticker master, caching and production rate limiting are not implemented yet.
+## Not yet equivalent to all Chartink features
+This project still needs persistent user accounts and permissions, saved scans UI and sharing, scheduled/live alerts, full historical backtesting charts, broad symbol/universe and fundamentals datasets, multi-timeframe synchronization, charting and drawing tools, magic/natural-language filters, and production hosting, cache and queue. Treat the features page and scan engine as a foundation, not complete parity.
