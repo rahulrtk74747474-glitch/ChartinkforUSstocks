@@ -21,9 +21,9 @@ def test_rsi_range(bars):
     assert ((values>=0)&(values<=100)).all()
 
 def test_numeric_rule_and_historical_offset(bars):
-    rule={"indicator":"close","operator":"gt","value_type":"value","value":30}
+    rule={"indicator":"close","operator":"gt","value_type":"value","value":36}
     assert evaluate_rule(bars,rule).iloc[-1]
-    assert not evaluate_rule(bars,{"indicator":"close","operator":"gt","value_type":"value","value":30,"offset":5}).iloc[-1]
+    assert not evaluate_rule(bars,{"indicator":"close","operator":"gt","value_type":"value","value":36,"offset":5}).iloc[-1]
 
 def test_indicator_comparison(bars):
     result=evaluate_rule(bars,{"indicator":"close","operator":"gt","value_type":"indicator","value":"sma"})
