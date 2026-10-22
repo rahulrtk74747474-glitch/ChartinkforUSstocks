@@ -117,7 +117,7 @@ def backtest(request:ScanRequest):
     output=[];errors=[]
     for symbol in request.symbols:
         try:
-            frame=get_daily_prices(symbol,outputsize=220)
+            frame=get_daily_prices(symbol,outputsize=220,interval=request.timeframe)
             signals=evaluate_scan(frame,definition)
             bars=[]
             for idx in range(len(frame)):
