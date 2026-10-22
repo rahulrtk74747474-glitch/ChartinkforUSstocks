@@ -9,6 +9,8 @@ on:
       - ".github/workflows/twelve-data-smoke-test.yml"
       - "backend/providers/**"
       - "test_twelve_data.py"
+      - "test_vertex_rsi_live.py"
+      - "backend/scan_engine.py"
       - "requirements.txt"
 
 permissions:
@@ -30,3 +32,8 @@ jobs:
         env:
           TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
         run: python test_twelve_data.py
+
+      - name: Run live Vertex and RSI(3) sample
+        env:
+          TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
+        run: python test_vertex_rsi_live.py
