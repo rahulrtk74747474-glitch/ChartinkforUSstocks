@@ -20,6 +20,19 @@ def test_rsi_range(bars):
     assert len(values)>0
     assert ((values>=0)&(values<=100)).all()
 
+def test_rsi_uses_wilder_seed():
+    close = pd.Series([10.0, 11.0, 10.0, 12.0, 11.0, 13.0])
+    frame = pd.DataFrame({"close": close, "high": close + 1, "low": close - 1})
+    rsi = indicator_series(frame, "rsi", 3)
+    # First RSI uses the first three price changes: average gain=1, loss=1/3.
+    assert rsi.iloc[3] == pytest.approx(75.0)
+    assert 0 <= rsi.iloc[-1] <= 100
+
+def test_vertex_control_is_available_and_finite_on_valid_bars(bars):
+    values = indicator_series(bars, "vertex_control", 14)
+    assert len(values) == len(bars)
+    assert pd.notna(values.iloc[-1])
+
 def test_numeric_rule_and_historical_offset(bars):
     rule={"indicator":"close","operator":"gt","value_type":"value","value":36}
     assert evaluate_rule(bars,rule).iloc[-1]
