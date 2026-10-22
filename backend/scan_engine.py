@@ -14,6 +14,7 @@ INDICATORS = {
     "sma", "ema", "wma", "rsi", "macd", "macd_signal", "macd_hist",
     "bb_upper", "bb_middle", "bb_lower", "atr", "stoch_k", "stoch_d",
     "obv", "vwap", "roc", "cci", "adx", "plus_di", "minus_di", "vertex_control",
+}
 
 OPERATORS = {"gt", "gte", "lt", "lte", "eq", "ne", "cross_above", "cross_below"}
 
