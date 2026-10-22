@@ -40,6 +40,6 @@ A Render Blueprint is included in `render.yaml`. To create the hosted service:
 2. Sign in to Render and select **Deploy** for the `chartink-us-stocks` service.
 3. When prompted, enter your Twelve Data key as `TWELVE_DATA_API_KEY`. Do not put it in source code or send it in chat.
 4. Wait for the service to finish deploying, then open the generated `onrender.com` URL and confirm `/api/health` reports `api_key_configured: true`.
-5. In the scanner, click **Vertex + RSI(3) test**. This sets daily conditions to Vertex Control (red) < -10 AND RSI(3) < 5. Then click **Run scan**.
+5. In the scanner, click **Vertex + RSI(3) test**. This sets daily conditions to Vertex Control (red) < -10 AND RSI(3) < 10. Then click **Run scan**.
 
 The hosting provider must be authorized by the repository owner; this repository change cannot create a Render account or enter a secret on the owner's behalf. Render's free service may sleep while idle, and its local SQLite file is not durable across all restarts/redeploys. Use persistent storage or a managed database before relying on saved scans in production.
