@@ -13,14 +13,40 @@ INDICATORS = {
     "open", "high", "low", "close", "volume", "change_pct",
     "sma", "ema", "wma", "rsi", "macd", "macd_signal", "macd_hist",
     "bb_upper", "bb_middle", "bb_lower", "atr", "stoch_k", "stoch_d",
-    "obv", "vwap", "roc", "cci", "adx", "plus_di", "minus_di",
-}
+    "obv", "vwap", "roc", "cci", "adx", "plus_di", "minus_di", "vertex_control",
+
 OPERATORS = {"gt", "gte", "lt", "lte", "eq", "ne", "cross_above", "cross_below"}
 
 def _period(rule: dict, default=14) -> int:
     p = int(rule.get("period", default))
     if p < 1 or p > 500: raise ValueError("Indicator period must be 1–500")
     return p
+
+def _vertex_control(frame: pd.DataFrame, length: int) -> pd.Series:
+    """Vertex red Control line using prior completed bars (matchExport=true)."""
+    close = frame["close"].astype(float).to_numpy()
+    high = frame["high"].astype(float).to_numpy() if "high" in frame else close
+    low = frame["low"].astype(float).to_numpy() if "low" in frame else close
+    result = np.full(len(frame), np.nan, dtype=float)
+    for i in range(len(frame)):
+        running_high, running_low = -np.inf, np.inf
+        up_sum = down_sum = 0.0
+        bars_used = 0
+        for j in range(i - 1, max(-1, i - length - 1), -1):
+            if not np.isfinite(close[j]):
+                continue
+            bars_used += 1
+            if high[j] > running_high:
+                running_high = high[j]
+                up_sum += close[j]
+            if low[j] < running_low:
+                running_low = low[j]
+                down_sum += close[j]
+        if bars_used == 0:
+            result[i] = 0.0
+        elif up_sum != 0.0 and down_sum != 0.0:
+            result[i] = down_sum / up_sum - up_sum / down_sum
+    return pd.Series(result, index=frame.index, name="vertex_control")
 
 def indicator_series(frame: pd.DataFrame, name: str, period: int = 14,
                      fast: int = 12, slow: int = 26, signal: int = 9) -> pd.Series:
@@ -30,6 +56,8 @@ def indicator_series(frame: pd.DataFrame, name: str, period: int = 14,
     low = frame["low"].astype(float) if "low" in frame else close
     volume = frame["volume"].astype(float).fillna(0) if "volume" in frame else close * 0
     if n in frame.columns: return frame[n].astype(float)
+    if n == "vertex": n = "vertex_control"
+    if n == "vertex_control": return _vertex_control(frame, period)
     if n == "open" or n == "high" or n == "low" or n == "close" or n == "volume":
         return frame[n].astype(float)
     if n == "change_pct": return close.pct_change() * 100
@@ -137,7 +165,7 @@ def latest_metrics(frame: pd.DataFrame) -> dict[str, Any]:
     for name in ("open","high","low","close","volume","change_pct"):
         try: result[name]=_safe_float(indicator_series(frame,name).iloc[-1])
         except Exception: result[name]=None
-    for name,p in (("sma",20),("sma",50),("sma",200),("ema",20),("ema",50),("ema",200),("rsi",14),("macd",12),("macd_signal",12),("macd_hist",12),("bb_upper",20),("bb_middle",20),("bb_lower",20),("atr",14),("adx",14)):
+    for name,p in (("sma",20),("sma",50),("sma",200),("ema",20),("ema",50),("ema",200),("rsi",14),("macd",12),("macd_signal",12),("macd_hist",12),("bb_upper",20),("bb_middle",20),("bb_lower",20),("atr",14),("adx",14),("vertex_control",14),("rsi",3)):
         key=f"{name}{p}"
         try: result[key]=_safe_float(indicator_series(frame,name,p).iloc[-1])
         except Exception: result[key]=None
