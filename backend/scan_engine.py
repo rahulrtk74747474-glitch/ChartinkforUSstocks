@@ -68,12 +68,22 @@ def indicator_series(frame: pd.DataFrame, name: str, period: int = 14,
         weights = np.arange(1, period + 1, dtype=float)
         return close.rolling(period).apply(lambda x: np.dot(x, weights) / weights.sum(), raw=True)
     if n == "rsi":
+        # Wilder RSI (matches the standard TradingView ta.rsi initialization):
+        # seed average gain/loss with the first period deltas, then Wilder-smooth.
         delta = close.diff()
-        gain = delta.clip(lower=0).ewm(alpha=1/period, min_periods=period, adjust=False).mean()
-        loss = -delta.clip(upper=0).ewm(alpha=1/period, min_periods=period, adjust=False).mean()
-        rs = gain / loss.replace(0, np.nan)
+        gains = delta.clip(lower=0.0)
+        losses = -delta.clip(upper=0.0)
+        avg_gain = pd.Series(np.nan, index=close.index, dtype=float)
+        avg_loss = pd.Series(np.nan, index=close.index, dtype=float)
+        if len(close) > period:
+            avg_gain.iloc[period] = gains.iloc[1:period + 1].mean()
+            avg_loss.iloc[period] = losses.iloc[1:period + 1].mean()
+            for i in range(period + 1, len(close)):
+                avg_gain.iloc[i] = ((period - 1) * avg_gain.iloc[i - 1] + gains.iloc[i]) / period
+                avg_loss.iloc[i] = ((period - 1) * avg_loss.iloc[i - 1] + losses.iloc[i]) / period
+        rs = avg_gain / avg_loss.replace(0, np.nan)
         out = 100 - 100/(1+rs)
-        return out.where(loss != 0, 100).where(~((gain == 0) & (loss == 0)), 50)
+        return out.where(avg_loss != 0, 100).where(~((avg_gain == 0) & (avg_loss == 0)), 50)
     if n in {"macd", "macd_signal", "macd_hist"}:
         line = close.ewm(span=fast, adjust=False).mean() - close.ewm(span=slow, adjust=False).mean()
         sig = line.ewm(span=signal, adjust=False).mean()
